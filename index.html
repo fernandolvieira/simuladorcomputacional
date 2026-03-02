@@ -2,160 +2,170 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Ciclo de Instrução - Prof. Fernando</title>
+    <title>Ciclo de Instrução Interativo - Prof. Fernando</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #2c3e50; color: white; text-align: center; padding: 20px; }
-        .architecture { display: grid; grid-template-columns: 200px 1fr 200px; gap: 20px; align-items: center; max-width: 1000px; margin: 0 auto; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; margin: 0; padding: 10px; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* Blocos Principais */
-        .box { border: 2px solid #ecf0f1; padding: 15px; border-radius: 10px; background: #34495e; min-height: 150px; position: relative; }
-        .cpu { background: #c0392b; grid-column: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .ram { background: #2980b9; height: 300px; display: flex; flex-direction: column; justify-content: space-around; }
-        .io-panel { display: flex; flex-direction: column; gap: 10px; }
-        
-        /* Componentes Internos */
-        .component { background: rgba(0,0,0,0.3); padding: 5px; border-radius: 5px; font-size: 0.8rem; margin: 5px 0; }
-        .data-flow { position: absolute; width: 20px; height: 20px; background: #f1c40f; border-radius: 50%; display: none; z-index: 10; box-shadow: 0 0 10px #f1c40f; }
-
-        /* Estilo das Setas e Botões */
-        .controls { margin-top: 30px; display: flex; justify-content: center; gap: 20px; }
-        button { padding: 15px 30px; font-size: 1.1rem; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.3s; }
+        /* Painel de Controle Superior */
+        .top-bar { display: flex; justify-content: center; gap: 15px; background: #2c3e50; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #34495e; }
+        button { padding: 10px 20px; font-weight: bold; cursor: pointer; border: none; border-radius: 4px; transition: 0.2s; }
         .btn-fetch { background: #27ae60; color: white; }
-        .btn-exec { background: #e67e22; color: white; opacity: 0.5; cursor: not-allowed; }
+        .btn-exec { background: #e67e22; color: white; opacity: 0.4; cursor: not-allowed; }
+        .active { opacity: 1 !important; cursor: pointer !important; transform: scale(1.05); box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+
+        /* Layout Principal */
+        .main-layout { display: grid; grid-template-columns: 1fr 300px; gap: 10px; flex-grow: 1; height: calc(100% - 100px); }
         
-        .active-btn { opacity: 1 !important; cursor: pointer !important; transform: scale(1.1); }
-        .highlight { border: 3px solid #f1c40f !important; transform: scale(1.05); }
+        /* Área da Arquitetura */
+        .architecture { display: grid; grid-template-columns: 140px 1fr 140px; gap: 10px; background: #252525; padding: 15px; border-radius: 8px; border: 1px solid #333; }
+        .box { border: 2px solid #444; padding: 10px; border-radius: 6px; background: #2c3e50; position: relative; }
+        .cpu { grid-column: 2; background: #c0392b; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .ram { background: #2980b9; display: flex; flex-direction: column; justify-content: space-around; font-size: 0.85rem; }
+        .io { background: #7f8c8d; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+
+        /* Componentes Internos */
+        .comp { background: rgba(0,0,0,0.4); padding: 5px; border-radius: 4px; font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.1); }
+        #monitor { background: #000; color: #0f0; height: 35px; display: flex; align-items: center; justify-content: center; font-family: monospace; border: 1px solid #555; font-size: 0.8rem; }
         
-        .device { padding: 10px; background: #7f8c8d; border-radius: 5px; font-size: 0.9rem; }
-        #monitor-screen { background: #000; color: #0f0; height: 40px; display: flex; align-items: center; justify-content: center; font-family: monospace; border: 2px solid #95a5a6; }
+        /* Log de Ações */
+        .log-panel { background: #000; border: 1px solid #444; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; }
+        .log-list { flex-grow: 1; overflow-y: auto; text-align: left; font-family: monospace; font-size: 0.85rem; color: #00e676; list-style: none; padding: 0; margin: 0; }
+        .log-item { border-bottom: 1px solid #222; padding: 5px 0; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Animação de Dados */
+        .data-point { position: absolute; width: 14px; height: 14px; background: #f1c40f; border-radius: 50%; display: none; z-index: 100; box-shadow: 0 0 8px #f1c40f; }
     </style>
 </head>
 <body>
 
-    <h1>Simulador: Ciclo de Busca e Execução + I/O</h1>
-    <p>Siga o fluxo: Entrada -> Busca -> Execução -> Saída</p>
-
-    <div class="architecture">
-        <div class="io-panel">
-            <h3>Entrada</h3>
-            <div class="device" id="dev-mouse">🖱️ Mouse</div>
-            <div class="device" id="dev-teclado">⌨️ Teclado</div>
-            <button onclick="inputData()" style="padding:5px; font-size:0.8rem;">Enviar Dado (5)</button>
-        </div>
-
-        <div class="box cpu" id="cpu-box">
-            <div style="grid-column: span 2; font-weight: bold;">PROCESSADOR (CPU)</div>
-            <div class="component" id="uc">Unidade de Controle<br><span id="uc-inst">IDLE</span></div>
-            <div class="component" id="ula">ULA (Cálculo)<br><span id="ula-res">0</span></div>
-            <div class="component" id="reg" style="grid-column: span 2;">Registrador de Instrução: <span id="reg-val">VAZIO</span></div>
-        </div>
-
-        <div class="box ram" id="ram-box">
-            <strong>RAM</strong>
-            <div class="component" id="ram-0">0x00: SOMA 5</div>
-            <div class="component" id="ram-1">0x01: MOSTRA</div>
-            <div class="component" id="ram-2">0x02: IMPRIME</div>
-        </div>
-
-        <div class="io-panel">
-            <h3>Saída</h3>
-            <div id="monitor-screen">OFF</div>
-            <div class="device" id="dev-print">🖨️ Impressora</div>
-        </div>
-    </div>
-
-    <div class="data-flow" id="ball"></div>
-
-    <div class="controls">
-        <button id="btn-fetch" class="btn-fetch" onclick="stepFetch()">1. BUSCAR (Fetch)</button>
+    <div class="top-bar">
+        <button id="btn-fetch" class="btn-fetch active" onclick="stepFetch()">1. BUSCAR (Fetch)</button>
         <button id="btn-exec" class="btn-exec" onclick="stepExecute()">2. EXECUTAR (Execute)</button>
+        <button style="background:#555; color:white" onclick="location.reload()">Reiniciar</button>
     </div>
 
-    <div id="status" style="margin-top:20px; color: #f1c40f; font-weight: bold;">Aguardando ação...</div>
+    <div class="main-layout">
+        <div class="architecture">
+            <div class="box io">
+                <strong>ENTRADA</strong>
+                <div class="comp">🖱️ Mouse</div>
+                <div class="comp">⌨️ Teclado</div>
+                <button onclick="inputData()" style="font-size: 0.7rem; padding: 5px;">Enviar '7'</button>
+            </div>
+
+            <div class="box cpu" id="cpu-ui">
+                <div style="grid-column: span 2; font-size: 0.9rem;">PROCESSADOR (CPU)</div>
+                <div class="comp" id="uc-ui">UC<br><small id="uc-status">IDLE</small></div>
+                <div class="comp" id="ula-ui">ULA<br><small id="ula-val">ACC: 0</small></div>
+                <div class="comp" style="grid-column: span 2;">IR (Instrução): <span id="ir-val">---</span></div>
+            </div>
+
+            <div class="box ram" id="ram-ui">
+                <strong>RAM</strong>
+                <div class="comp" id="m0">0x0: SOMA 7</div>
+                <div class="comp" id="m1">0x1: MOSTRA</div>
+                <div class="comp" id="m2">0x2: IMPRIME</div>
+            </div>
+            
+            <div style="grid-column: 3; display: flex; flex-direction: column; gap: 10px;">
+                <div class="box io" style="min-height: 80px;">
+                    <strong>SAÍDA</strong>
+                    <div id="monitor">OFF</div>
+                </div>
+                <div class="comp">🖨️ Impressora</div>
+            </div>
+        </div>
+
+        <div class="log-panel">
+            <strong style="color: #888; margin-bottom: 10px; display: block;">HISTÓRICO DE AÇÕES</strong>
+            <ul class="log-list" id="log-list">
+                <li class="log-item">> Sistema pronto.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="data-point" id="ball"></div>
 
     <script>
-        let step = 0; // 0: Fetch, 1: Execute
-        let pc = 0;   // Program Counter
-        let acc = 0;  // Acumulador (resultado)
-        const instructions = ["SOMA 5", "MOSTRA", "IMPRIME"];
+        let pc = 0, acc = 0, step = 0;
+        const program = ["SOMA 7", "MOSTRA", "IMPRIME"];
+
+        function addLog(msg) {
+            const list = document.getElementById('log-list');
+            const item = document.createElement('li');
+            item.className = 'log-item';
+            item.innerText = `[PC:0x${pc}] > ${msg}`;
+            list.prepend(item);
+        }
 
         function inputData() {
-            moveBall('dev-teclado', 'ram-box', () => {
-                document.getElementById('status').innerText = "Dado '5' armazenado na RAM via Teclado!";
+            move('io', 'ram-ui', () => {
+                addLog("Dado de entrada '7' enviado para a RAM.");
             });
         }
 
         function stepFetch() {
             if(step !== 0) return;
+            const inst = program[pc];
+            document.getElementById('uc-status').innerText = "BUSCANDO...";
             
-            const inst = instructions[pc];
-            document.getElementById('uc-inst').innerText = "BUSCANDO...";
-            
-            moveBall('ram-box', 'cpu-box', () => {
-                document.getElementById('reg-val').innerText = inst;
-                document.getElementById('uc-inst').innerText = "DECODIFICANDO: " + inst;
-                document.getElementById('status').innerText = "Instrução " + inst + " carregada no Registrador.";
+            move('ram-ui', 'cpu-ui', () => {
+                document.getElementById('ir-val').innerText = inst;
+                document.getElementById('uc-status').innerText = "DECODIFICANDO";
+                addLog(`BUSCA: Instrução '${inst}' trazida da RAM.`);
                 
-                // Alterna botões
-                document.getElementById('btn-fetch').classList.remove('active-btn');
-                document.getElementById('btn-exec').classList.add('active-btn');
+                document.getElementById('btn-fetch').classList.remove('active');
+                document.getElementById('btn-exec').classList.add('active');
                 step = 1;
             });
         }
 
         function stepExecute() {
             if(step !== 1) return;
-
-            const inst = instructions[pc];
+            const inst = program[pc];
             
-            if(inst === "SOMA 5") {
-                moveBall('reg', 'ula', () => {
-                    acc += 5;
-                    document.getElementById('ula-res').innerText = acc;
-                    finishExecute("Soma realizada na ULA!");
+            if(inst === "SOMA 7") {
+                move('cpu-ui', 'cpu-ui', () => {
+                    acc += 7;
+                    document.getElementById('ula-val').innerText = "ACC: " + acc;
+                    complete("EXECUTE: ULA somou 7 ao acumulador.");
                 });
             } else if(inst === "MOSTRA") {
-                moveBall('ula', 'monitor-screen', () => {
-                    document.getElementById('monitor-screen').innerText = "RESULTADO: " + acc;
-                    finishExecute("Dados enviados para o Monitor!");
+                move('cpu-ui', 'monitor', () => {
+                    document.getElementById('monitor').innerText = "VALOR: " + acc;
+                    complete("EXECUTE: Valor enviado para o Monitor.");
                 });
             } else if(inst === "IMPRIME") {
-                moveBall('ula', 'dev-print', () => {
-                    document.getElementById('status').innerText = "🖨️ Documento enviado para a fila de impressão!";
-                    finishExecute("Impressão concluída!");
-                    pc = -1; // Reinicia ciclo
+                move('cpu-ui', 'io', () => {
+                    addLog("EXECUTE: Documento enviado para a Impressora.");
+                    complete("Ciclo de programa finalizado.");
+                    pc = -1;
                 });
             }
         }
 
-        function finishExecute(msg) {
-            document.getElementById('status').innerText = msg;
+        function complete(msg) {
+            addLog(msg);
             pc++;
             step = 0;
-            document.getElementById('btn-exec').classList.remove('active-btn');
-            document.getElementById('btn-fetch').classList.add('active-btn');
+            document.getElementById('btn-exec').classList.remove('active');
+            document.getElementById('btn-fetch').classList.add('active');
         }
 
-        function moveBall(fromId, toId, callback) {
+        function move(fromId, toId, cb) {
             const ball = document.getElementById('ball');
-            const from = document.getElementById(fromId).getBoundingClientRect();
-            const to = document.getElementById(toId).getBoundingClientRect();
-
+            const f = document.getElementById(fromId).getBoundingClientRect();
+            const t = document.getElementById(toId).getBoundingClientRect();
             ball.style.display = "block";
-            ball.style.left = from.left + (from.width/2) + "px";
-            ball.style.top = from.top + (from.height/2) + "px";
-
+            ball.style.left = f.left + f.width/2 + "px";
+            ball.style.top = f.top + f.height/2 + "px";
             setTimeout(() => {
-                ball.style.transition = "all 0.8s ease-in-out";
-                ball.style.left = to.left + (to.width/2) + "px";
-                ball.style.top = to.top + (to.height/2) + "px";
+                ball.style.transition = "0.6s cubic-bezier(0.45, 0.05, 0.55, 0.95)";
+                ball.style.left = t.left + t.width/2 + "px";
+                ball.style.top = t.top + t.height/2 + "px";
             }, 50);
-
-            setTimeout(() => {
-                ball.style.display = "none";
-                ball.style.transition = "none";
-                callback();
-            }, 850);
+            setTimeout(() => { ball.style.display="none"; ball.style.transition="none"; cb(); }, 650);
         }
     </script>
 </body>
