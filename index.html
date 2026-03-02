@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Ciclo de Instrução - Prof. Fernando</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #2c3e50; color: white; text-align: center; padding: 20px; }
+        .architecture { display: grid; grid-template-columns: 200px 1fr 200px; gap: 20px; align-items: center; max-width: 1000px; margin: 0 auto; }
+        
+        /* Blocos Principais */
+        .box { border: 2px solid #ecf0f1; padding: 15px; border-radius: 10px; background: #34495e; min-height: 150px; position: relative; }
+        .cpu { background: #c0392b; grid-column: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .ram { background: #2980b9; height: 300px; display: flex; flex-direction: column; justify-content: space-around; }
+        .io-panel { display: flex; flex-direction: column; gap: 10px; }
+        
+        /* Componentes Internos */
+        .component { background: rgba(0,0,0,0.3); padding: 5px; border-radius: 5px; font-size: 0.8rem; margin: 5px 0; }
+        .data-flow { position: absolute; width: 20px; height: 20px; background: #f1c40f; border-radius: 50%; display: none; z-index: 10; box-shadow: 0 0 10px #f1c40f; }
+
+        /* Estilo das Setas e Botões */
+        .controls { margin-top: 30px; display: flex; justify-content: center; gap: 20px; }
+        button { padding: 15px 30px; font-size: 1.1rem; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.3s; }
+        .btn-fetch { background: #27ae60; color: white; }
+        .btn-exec { background: #e67e22; color: white; opacity: 0.5; cursor: not-allowed; }
+        
+        .active-btn { opacity: 1 !important; cursor: pointer !important; transform: scale(1.1); }
+        .highlight { border: 3px solid #f1c40f !important; transform: scale(1.05); }
+        
+        .device { padding: 10px; background: #7f8c8d; border-radius: 5px; font-size: 0.9rem; }
+        #monitor-screen { background: #000; color: #0f0; height: 40px; display: flex; align-items: center; justify-content: center; font-family: monospace; border: 2px solid #95a5a6; }
+    </style>
+</head>
+<body>
+
+    <h1>Simulador: Ciclo de Busca e Execução + I/O</h1>
+    <p>Siga o fluxo: Entrada -> Busca -> Execução -> Saída</p>
+
+    <div class="architecture">
+        <div class="io-panel">
+            <h3>Entrada</h3>
+            <div class="device" id="dev-mouse">🖱️ Mouse</div>
+            <div class="device" id="dev-teclado">⌨️ Teclado</div>
+            <button onclick="inputData()" style="padding:5px; font-size:0.8rem;">Enviar Dado (5)</button>
+        </div>
+
+        <div class="box cpu" id="cpu-box">
+            <div style="grid-column: span 2; font-weight: bold;">PROCESSADOR (CPU)</div>
+            <div class="component" id="uc">Unidade de Controle<br><span id="uc-inst">IDLE</span></div>
+            <div class="component" id="ula">ULA (Cálculo)<br><span id="ula-res">0</span></div>
+            <div class="component" id="reg" style="grid-column: span 2;">Registrador de Instrução: <span id="reg-val">VAZIO</span></div>
+        </div>
+
+        <div class="box ram" id="ram-box">
+            <strong>RAM</strong>
+            <div class="component" id="ram-0">0x00: SOMA 5</div>
+            <div class="component" id="ram-1">0x01: MOSTRA</div>
+            <div class="component" id="ram-2">0x02: IMPRIME</div>
+        </div>
+
+        <div class="io-panel">
+            <h3>Saída</h3>
+            <div id="monitor-screen">OFF</div>
+            <div class="device" id="dev-print">🖨️ Impressora</div>
+        </div>
+    </div>
+
+    <div class="data-flow" id="ball"></div>
+
+    <div class="controls">
+        <button id="btn-fetch" class="btn-fetch" onclick="stepFetch()">1. BUSCAR (Fetch)</button>
+        <button id="btn-exec" class="btn-exec" onclick="stepExecute()">2. EXECUTAR (Execute)</button>
+    </div>
+
+    <div id="status" style="margin-top:20px; color: #f1c40f; font-weight: bold;">Aguardando ação...</div>
+
+    <script>
+        let step = 0; // 0: Fetch, 1: Execute
+        let pc = 0;   // Program Counter
+        let acc = 0;  // Acumulador (resultado)
+        const instructions = ["SOMA 5", "MOSTRA", "IMPRIME"];
+
+        function inputData() {
+            moveBall('dev-teclado', 'ram-box', () => {
+                document.getElementById('status').innerText = "Dado '5' armazenado na RAM via Teclado!";
+            });
+        }
+
+        function stepFetch() {
+            if(step !== 0) return;
+            
+            const inst = instructions[pc];
+            document.getElementById('uc-inst').innerText = "BUSCANDO...";
+            
+            moveBall('ram-box', 'cpu-box', () => {
+                document.getElementById('reg-val').innerText = inst;
+                document.getElementById('uc-inst').innerText = "DECODIFICANDO: " + inst;
+                document.getElementById('status').innerText = "Instrução " + inst + " carregada no Registrador.";
+                
+                // Alterna botões
+                document.getElementById('btn-fetch').classList.remove('active-btn');
+                document.getElementById('btn-exec').classList.add('active-btn');
+                step = 1;
+            });
+        }
+
+        function stepExecute() {
+            if(step !== 1) return;
+
+            const inst = instructions[pc];
+            
+            if(inst === "SOMA 5") {
+                moveBall('reg', 'ula', () => {
+                    acc += 5;
+                    document.getElementById('ula-res').innerText = acc;
+                    finishExecute("Soma realizada na ULA!");
+                });
+            } else if(inst === "MOSTRA") {
+                moveBall('ula', 'monitor-screen', () => {
+                    document.getElementById('monitor-screen').innerText = "RESULTADO: " + acc;
+                    finishExecute("Dados enviados para o Monitor!");
+                });
+            } else if(inst === "IMPRIME") {
+                moveBall('ula', 'dev-print', () => {
+                    document.getElementById('status').innerText = "🖨️ Documento enviado para a fila de impressão!";
+                    finishExecute("Impressão concluída!");
+                    pc = -1; // Reinicia ciclo
+                });
+            }
+        }
+
+        function finishExecute(msg) {
+            document.getElementById('status').innerText = msg;
+            pc++;
+            step = 0;
+            document.getElementById('btn-exec').classList.remove('active-btn');
+            document.getElementById('btn-fetch').classList.add('active-btn');
+        }
+
+        function moveBall(fromId, toId, callback) {
+            const ball = document.getElementById('ball');
+            const from = document.getElementById(fromId).getBoundingClientRect();
+            const to = document.getElementById(toId).getBoundingClientRect();
+
+            ball.style.display = "block";
+            ball.style.left = from.left + (from.width/2) + "px";
+            ball.style.top = from.top + (from.height/2) + "px";
+
+            setTimeout(() => {
+                ball.style.transition = "all 0.8s ease-in-out";
+                ball.style.left = to.left + (to.width/2) + "px";
+                ball.style.top = to.top + (to.height/2) + "px";
+            }, 50);
+
+            setTimeout(() => {
+                ball.style.display = "none";
+                ball.style.transition = "none";
+                callback();
+            }, 850);
+        }
+    </script>
+</body>
+</html>
