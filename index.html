@@ -2,39 +2,31 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Ciclo de Instrução Interativo - Prof. Fernando</title>
+    <title>Simulador de Hardware: Casos Reais - Prof. Fernando</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; margin: 0; padding: 10px; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        
-        /* Painel de Controle Superior */
-        .top-bar { display: flex; justify-content: center; gap: 15px; background: #2c3e50; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #34495e; }
-        button { padding: 10px 20px; font-weight: bold; cursor: pointer; border: none; border-radius: 4px; transition: 0.2s; }
-        .btn-fetch { background: #27ae60; color: white; }
-        .btn-exec { background: #e67e22; color: white; opacity: 0.4; cursor: not-allowed; }
-        .active { opacity: 1 !important; cursor: pointer !important; transform: scale(1.05); box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: #e0e0e0; margin: 0; padding: 10px; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .top-bar { display: flex; justify-content: center; gap: 15px; background: #1a1a1a; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-bottom: 3px solid #0078d4; }
+        button { padding: 10px 20px; font-weight: bold; cursor: pointer; border: none; border-radius: 4px; transition: 0.2s; text-transform: uppercase; font-size: 0.8rem; }
+        .btn-fetch { background: #107c10; color: white; }
+        .btn-exec { background: #d83b01; color: white; opacity: 0.3; cursor: not-allowed; }
+        .active { opacity: 1 !important; cursor: pointer !important; box-shadow: 0 0 15px rgba(255,255,255,0.1); }
 
-        /* Layout Principal */
-        .main-layout { display: grid; grid-template-columns: 1fr 300px; gap: 10px; flex-grow: 1; height: calc(100% - 100px); }
-        
-        /* Área da Arquitetura */
-        .architecture { display: grid; grid-template-columns: 140px 1fr 140px; gap: 10px; background: #252525; padding: 15px; border-radius: 8px; border: 1px solid #333; }
-        .box { border: 2px solid #444; padding: 10px; border-radius: 6px; background: #2c3e50; position: relative; }
-        .cpu { grid-column: 2; background: #c0392b; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .ram { background: #2980b9; display: flex; flex-direction: column; justify-content: space-around; font-size: 0.85rem; }
-        .io { background: #7f8c8d; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+        .main-layout { display: grid; grid-template-columns: 1fr 380px; gap: 10px; flex-grow: 1; height: calc(100% - 110px); }
+        .architecture { display: grid; grid-template-columns: 140px 1fr 140px; gap: 15px; background: #161616; padding: 20px; border-radius: 8px; border: 1px solid #333; }
+        .box { border: 2px solid #444; padding: 12px; border-radius: 8px; background: #252525; position: relative; display: flex; flex-direction: column; gap: 8px; }
+        .cpu { grid-column: 2; background: #3e0000; border-color: #ff4d4d; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .ram { background: #002d4d; border-color: #0078d4; }
+        .io { background: #333; border-color: #666; }
 
-        /* Componentes Internos */
-        .comp { background: rgba(0,0,0,0.4); padding: 5px; border-radius: 4px; font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.1); }
-        #monitor { background: #000; color: #0f0; height: 35px; display: flex; align-items: center; justify-content: center; font-family: monospace; border: 1px solid #555; font-size: 0.8rem; }
+        .comp { background: rgba(0,0,0,0.6); padding: 8px; border-radius: 4px; font-size: 0.7rem; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+        #monitor { background: #000; color: #00ff00; height: 60px; display: flex; align-items: center; justify-content: center; font-family: 'Consolas', monospace; border: 2px solid #444; font-size: 0.8rem; text-align: center; }
         
-        /* Log de Ações */
-        .log-panel { background: #000; border: 1px solid #444; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; }
-        .log-list { flex-grow: 1; overflow-y: auto; text-align: left; font-family: monospace; font-size: 0.85rem; color: #00e676; list-style: none; padding: 0; margin: 0; }
-        .log-item { border-bottom: 1px solid #222; padding: 5px 0; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .log-panel { background: #000; border: 1px solid #333; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; overflow: hidden; }
+        .log-list { flex-grow: 1; overflow-y: auto; text-align: left; font-family: 'Consolas', monospace; font-size: 0.8rem; color: #00e676; list-style: none; padding: 0; margin: 0; }
+        .log-item { border-bottom: 1px solid #222; padding: 8px 0; border-left: 3px solid #0078d4; padding-left: 10px; margin-bottom: 5px; }
 
-        /* Animação de Dados */
-        .data-point { position: absolute; width: 14px; height: 14px; background: #f1c40f; border-radius: 50%; display: none; z-index: 100; box-shadow: 0 0 8px #f1c40f; }
+        .ball { position: absolute; width: 16px; height: 16px; background: #ffeb3b; border-radius: 50%; display: none; z-index: 100; box-shadow: 0 0 15px #ffeb3b; }
+        .label { font-size: 0.6rem; color: #888; text-transform: uppercase; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -42,78 +34,90 @@
     <div class="top-bar">
         <button id="btn-fetch" class="btn-fetch active" onclick="stepFetch()">1. BUSCAR (Fetch)</button>
         <button id="btn-exec" class="btn-exec" onclick="stepExecute()">2. EXECUTAR (Execute)</button>
-        <button style="background:#555; color:white" onclick="location.reload()">Reiniciar</button>
+        <button style="background:#444; color:white" onclick="location.reload()">Reiniciar Sistema</button>
     </div>
 
     <div class="main-layout">
         <div class="architecture">
-            <div class="box io">
-                <strong>ENTRADA</strong>
-                <div class="comp">🖱️ Mouse</div>
-                <div class="comp">⌨️ Teclado</div>
-                <button onclick="inputData()" style="font-size: 0.7rem; padding: 5px;">Enviar '7'</button>
+            <div class="box io" id="input-ui">
+                <span class="label">Entrada / Rede</span>
+                <div class="comp">⌨️ Usuário Digita</div>
+                <div class="comp" id="net-card" style="color: #00d2ff;">🌐 Placa de Rede (Internet)</div>
+                <div class="comp">🖱️ Clique Excel</div>
             </div>
 
             <div class="box cpu" id="cpu-ui">
-                <div style="grid-column: span 2; font-size: 0.9rem;">PROCESSADOR (CPU)</div>
-                <div class="comp" id="uc-ui">UC<br><small id="uc-status">IDLE</small></div>
-                <div class="comp" id="ula-ui">ULA<br><small id="ula-val">ACC: 0</small></div>
-                <div class="comp" style="grid-column: span 2;">IR (Instrução): <span id="ir-val">---</span></div>
+                <div style="grid-column: span 2; font-weight: bold; color: #ff4d4d;">CPU (Unidade de Processamento)</div>
+                <div class="comp" id="uc-ui">UC<br><small id="uc-status">AGUARDANDO</small></div>
+                <div class="comp" id="ula-ui">ULA<br><small id="ula-val">REG: 0</small></div>
+                <div class="comp" style="grid-column: span 2; border: 1px solid #ffeb3b;">
+                    Registrador de Instrução (IR):<br>
+                    <span id="ir-val" style="color:#ffeb3b">---</span>
+                </div>
             </div>
 
             <div class="box ram" id="ram-ui">
-                <strong>RAM</strong>
-                <div class="comp" id="m0">0x0: SOMA 7</div>
-                <div class="comp" id="m1">0x1: MOSTRA</div>
-                <div class="comp" id="m2">0x2: IMPRIME</div>
+                <span class="label">Memória RAM (Espaço de Trabalho)</span>
+                <div class="comp" id="m0">0x0: EXCEL (CÁLCULO)</div>
+                <div class="comp" id="m1">0x1: DOWNLOAD (BUFFER)</div>
+                <div class="comp" id="m2">0x2: STREAMING (VÍDEO)</div>
+                <div class="comp" id="m3">0x3: MENU_INICIAR (UI)</div>
+                <div class="comp" id="m4">0x4: ANTIVIRUS (SCAN)</div>
             </div>
             
             <div style="grid-column: 3; display: flex; flex-direction: column; gap: 10px;">
-                <div class="box io" style="min-height: 80px;">
-                    <strong>SAÍDA</strong>
-                    <div id="monitor">OFF</div>
+                <div class="box io" id="output-ui">
+                    <span class="label">Monitor</span>
+                    <div id="monitor">AGUARDANDO SINAL</div>
                 </div>
-                <div class="comp">🖨️ Impressora</div>
+                <div class="box io" style="background:#1a1a1a" id="disk-ui">
+                    <span class="label">SSD (Armazenamento)</span>
+                    <div class="comp">💾 Salvar Arquivo</div>
+                </div>
             </div>
         </div>
 
         <div class="log-panel">
-            <strong style="color: #888; margin-bottom: 10px; display: block;">HISTÓRICO DE AÇÕES</strong>
+            <strong style="color: #0078d4; margin-bottom: 10px; display: block;">MONITOR DE FLUXO DE DADOS</strong>
             <ul class="log-list" id="log-list">
-                <li class="log-item">> Sistema pronto.</li>
+                <li class="log-item">> BIOS carregada. Sistema operacional pronto.</li>
             </ul>
         </div>
     </div>
 
-    <div class="data-point" id="ball"></div>
+    <div class="ball" id="ball"></div>
 
     <script>
-        let pc = 0, acc = 0, step = 0;
-        const program = ["SOMA 7", "MOSTRA", "IMPRIME"];
+        let pc = 0, step = 0;
+        const actions = [
+            { id: "EXCEL", title: "Cálculo no Excel", log: "Usuário somou colunas A+B.", flow: ['input-ui', 'cpu-ui', 'output-ui'], res: "EXCEL: Soma=450" },
+            { id: "DOWNLOAD", title: "Download de Arquivo", log: "Pacotes de rede chegando da internet.", flow: ['net-card', 'ram-ui', 'disk-ui'], res: "DOWNLOAD: 100% OK" },
+            { id: "STREAMING", title: "Reproduzir Vídeo", log: "Buffer de vídeo sendo processado.", flow: ['ram-ui', 'cpu-ui', 'output-ui'], res: "VÍDEO: 1080p Play" },
+            { id: "MENU_INICIAR", title: "Abrir Menu Iniciar", log: "Chamada de sistema para interface gráfica.", flow: ['input-ui', 'cpu-ui', 'output-ui'], res: "START MENU OPEN" },
+            { id: "ANTIVIRUS", title: "Scan de Antivírus", log: "Lendo setores do disco para análise.", flow: ['disk-ui', 'cpu-ui', 'ram-ui'], res: "SCAN: Protegido" }
+        ];
 
-        function addLog(msg) {
+        function addLog(msg, color="#00e676") {
             const list = document.getElementById('log-list');
             const item = document.createElement('li');
             item.className = 'log-item';
-            item.innerText = `[PC:0x${pc}] > ${msg}`;
+            item.style.borderLeftColor = color;
+            item.innerHTML = `<b>[AÇÃO ${pc+1}]</b> ${msg}`;
             list.prepend(item);
         }
 
-        function inputData() {
-            move('io', 'ram-ui', () => {
-                addLog("Dado de entrada '7' enviado para a RAM.");
-            });
-        }
-
         function stepFetch() {
-            if(step !== 0) return;
-            const inst = program[pc];
-            document.getElementById('uc-status').innerText = "BUSCANDO...";
+            if(step !== 0 || pc >= actions.length) return;
+            const current = actions[pc];
             
+            document.getElementById('uc-status').innerText = "BUSCANDO...";
+            document.querySelectorAll('.ram .comp').forEach(c => c.style.background = "rgba(0,0,0,0.6)");
+            document.getElementById('m'+pc).style.background = "#0078d4";
+
             move('ram-ui', 'cpu-ui', () => {
-                document.getElementById('ir-val').innerText = inst;
+                document.getElementById('ir-val').innerText = current.title;
                 document.getElementById('uc-status').innerText = "DECODIFICANDO";
-                addLog(`BUSCA: Instrução '${inst}' trazida da RAM.`);
+                addLog(`<b>BUSCA:</b> O processador localizou a tarefa <i>${current.title}</i> na RAM.`, "#ffeb3b");
                 
                 document.getElementById('btn-fetch').classList.remove('active');
                 document.getElementById('btn-exec').classList.add('active');
@@ -123,34 +127,26 @@
 
         function stepExecute() {
             if(step !== 1) return;
-            const inst = program[pc];
+            const current = actions[pc];
+            const path = current.flow;
+
+            addLog(`<b>EXECUÇÃO:</b> ${current.log}`);
             
-            if(inst === "SOMA 7") {
-                move('cpu-ui', 'cpu-ui', () => {
-                    acc += 7;
-                    document.getElementById('ula-val').innerText = "ACC: " + acc;
-                    complete("EXECUTE: ULA somou 7 ao acumulador.");
+            // Simulação de fluxo completo percorrendo o caminho
+            move(path[0], path[1], () => {
+                move(path[1], path[2], () => {
+                    document.getElementById('monitor').innerText = current.res;
+                    complete(`<b>CONCLUÍDO:</b> Dados entregues ao destino final.`);
                 });
-            } else if(inst === "MOSTRA") {
-                move('cpu-ui', 'monitor', () => {
-                    document.getElementById('monitor').innerText = "VALOR: " + acc;
-                    complete("EXECUTE: Valor enviado para o Monitor.");
-                });
-            } else if(inst === "IMPRIME") {
-                move('cpu-ui', 'io', () => {
-                    addLog("EXECUTE: Documento enviado para a Impressora.");
-                    complete("Ciclo de programa finalizado.");
-                    pc = -1;
-                });
-            }
+            });
         }
 
         function complete(msg) {
             addLog(msg);
-            pc++;
-            step = 0;
+            pc++; step = 0;
             document.getElementById('btn-exec').classList.remove('active');
-            document.getElementById('btn-fetch').classList.add('active');
+            if(pc < actions.length) document.getElementById('btn-fetch').classList.add('active');
+            else addLog("<b>FIM:</b> Todas as atividades do usuário foram processadas.");
         }
 
         function move(fromId, toId, cb) {
@@ -158,14 +154,14 @@
             const f = document.getElementById(fromId).getBoundingClientRect();
             const t = document.getElementById(toId).getBoundingClientRect();
             ball.style.display = "block";
-            ball.style.left = f.left + f.width/2 + "px";
-            ball.style.top = f.top + f.height/2 + "px";
+            ball.style.left = (f.left + f.width/2) + "px";
+            ball.style.top = (f.top + f.height/2) + "px";
             setTimeout(() => {
-                ball.style.transition = "0.6s cubic-bezier(0.45, 0.05, 0.55, 0.95)";
-                ball.style.left = t.left + t.width/2 + "px";
-                ball.style.top = t.top + t.height/2 + "px";
+                ball.style.transition = "0.8s ease-in-out";
+                ball.style.left = (t.left + t.width/2) + "px";
+                ball.style.top = (t.top + t.height/2) + "px";
             }, 50);
-            setTimeout(() => { ball.style.display="none"; ball.style.transition="none"; cb(); }, 650);
+            setTimeout(() => { ball.style.display="none"; ball.style.transition="none"; cb(); }, 850);
         }
     </script>
 </body>
